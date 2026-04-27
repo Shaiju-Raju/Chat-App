@@ -1,21 +1,21 @@
 import { useEffect, useState, useRef } from "react";
 import { io } from "socket.io-client";
 import "../pages/chat.css";
+import useLocalStorage from "../hooks/useLocalStorage";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Chat() {
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
-  const [user, setUser] = useState(null);
   const [socket, setSocket] = useState(null);
+  const [user, setUser] = useLocalStorage("user", null);
 
   const chatEndRef = useRef(null); // ✅ inside component
 
   // ✅ Load user + create socket (ONLY ONCE)
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    setUser(storedUser);
+    if (!user) return; // wait until user loads
 
     const newSocket = io(API_URL, {
       auth: {
