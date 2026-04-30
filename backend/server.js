@@ -22,7 +22,9 @@ io.use((socket, next) => {
   console.log("Token from Client:", token);
 
   if (!token) {
+    console.log("no Tocken")
     return next(new Error("No Token"));
+
   }
 
   try {
@@ -42,11 +44,11 @@ io.use((socket, next) => {
 
 //Real time chating after verificatioin
 io.on("connection", (socket) => {
+  socket.emit("user_data", socket.user);
   console.log("🟢 User connected:", socket.id);
 
   socket.on("send_message", (data)=> {
     console.log("📩 Message:", data);
-
     io.emit("receive_message", data);
   })
 

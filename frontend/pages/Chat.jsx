@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { io } from "socket.io-client";
+import { useNavigate } from "react-router-dom";
 import "../pages/chat.css";
-import useLocalStorage from "../hooks/useLocalStorage";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -9,22 +9,57 @@ export default function Chat() {
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
   const [socket, setSocket] = useState(null);
-  const [user, setUser] = useLocalStorage("user", null);
+  const [user, setUser] = useState(null);
 
-  const chatEndRef = useRef(null); // ✅ inside component
+  const chatEndRef = useRef(null);
+  const navigate = useNavigate();
 
-  // ✅ Load user + create socket (ONLY ONCE)
   useEffect(() => {
-    if (!user) return; // wait until user loads
+    const token = localStorage.getItem("token");
+
+    // ❌ No token → go login
+    if (!token) {
+      navigate("/login", { replace: true });
+      return;
+    }
 
     const newSocket = io(API_URL, {
-      auth: {
-        token: localStorage.getItem("token"),
-      },
+      auth: { token },
     });
 
-    setSocket(newSocket);
+    // ❌ Backend rejects (expired / invalid)
+    newSocket.on("connect_error", (err) => {
+      console.log("❌ Connection error:", err.message);
 
+      if (
+        err.message === "Token expired" ||
+        err.message === "Invalid token" ||
+        err.message === "No Token"
+      ) {
+        localStorage.removeItem("token");
+        navigate("/login", { replace: true });
+      }
+    });
+
+    // ✅ Connected successfully
+    newSocket.on("connect", () => {
+      console.log("✅ Connected:", newSocket.id);
+
+      // 🔥 Get user from backend (decoded token)
+      const decodedUser = newSocket.auth?.user || null;
+
+      // OR better: backend should emit user (recommended)
+      newSocket.emit("get_user");
+
+      setSocket(newSocket);
+    });
+
+    // ✅ Receive user from backend (recommended way)
+    newSocket.on("user_data", (userData) => {
+      setUser(userData);
+    });
+
+    // ✅ Receive messages
     newSocket.on("receive_message", (data) => {
       setChat((prev) => [...prev, data]);
     });
@@ -32,9 +67,9 @@ export default function Chat() {
     return () => {
       newSocket.disconnect();
     };
-  }, []); // ✅ EMPTY dependency
+  }, [navigate]);
 
-  // ✅ Auto scroll when chat updates
+  // ✅ Auto scroll
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat]);
@@ -53,7 +88,9 @@ export default function Chat() {
     setMessage("");
   };
 
-  if (!user) return <p>Loading...</p>;
+  // ⏳ While connecting / loading
+  if (!socket) return <p>Connecting...</p>;
+  if (!user) return <p>Loading user...</p>;
 
   return (
     <div className="app">

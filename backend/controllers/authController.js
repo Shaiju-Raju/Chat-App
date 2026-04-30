@@ -38,6 +38,7 @@ export const login = async (req, res) => {
     const { email, password } = req.body;
 
     const user = await findUserByEmail(email);
+    console.log(user)
 
     if (!user) {
       return res.status(400).json({ message: "User not found" });
@@ -50,7 +51,7 @@ export const login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id },
+      { id: user.id, username: user.username },
       process.env.JWT_SECRET,
       { expiresIn: ms("1h") / 1000 }
     );
