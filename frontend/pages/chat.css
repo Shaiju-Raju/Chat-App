@@ -144,3 +144,19 @@
 .input-box button:hover {
   background: #0b7a6d;
 }
+
+.sender-name {
+  font-size: 15px;       
+  font-weight: 700;      
+  color: #374151;       
+  margin-bottom: 4px;
+  display: block;
+}
+
+.time {
+  font-size: 10px;
+  color: #999;
+  margin-top: 4px;
+  display: block;
+  text-align: right;
+}

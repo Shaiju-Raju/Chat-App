@@ -2,72 +2,29 @@ import { useEffect, useState, useRef } from "react";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import "../pages/chat.css";
+import useSocket from "../hooks/useSocket.js";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Chat() {
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
-  const [socket, setSocket] = useState(null);
-  const [user, setUser] = useState(null);
-
   const chatEndRef = useRef(null);
   const navigate = useNavigate();
+  const {socket, user} = useSocket()
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
+  useEffect (() => {
+    if(!socket) return;
 
-    // ❌ No token → go login
-    if (!token) {
-      navigate("/login", { replace: true });
-      return;
-    }
-
-    const newSocket = io(API_URL, {
-      auth: { token },
-    });
-
-    // ❌ Backend rejects (expired / invalid)
-    newSocket.on("connect_error", (err) => {
-      console.log("❌ Connection error:", err.message);
-
-      if (
-        err.message === "Token expired" ||
-        err.message === "Invalid token" ||
-        err.message === "No Token"
-      ) {
-        localStorage.removeItem("token");
-        navigate("/login", { replace: true });
-      }
-    });
-
-    // ✅ Connected successfully
-    newSocket.on("connect", () => {
-      console.log("✅ Connected:", newSocket.id);
-
-      // 🔥 Get user from backend (decoded token)
-      const decodedUser = newSocket.auth?.user || null;
-
-      // OR better: backend should emit user (recommended)
-      newSocket.emit("get_user");
-
-      setSocket(newSocket);
-    });
-
-    // ✅ Receive user from backend (recommended way)
-    newSocket.on("user_data", (userData) => {
-      setUser(userData);
-    });
-
-    // ✅ Receive messages
-    newSocket.on("receive_message", (data) => {
+    socket.on("receive_message", (data) => {
       setChat((prev) => [...prev, data]);
     });
 
     return () => {
-      newSocket.disconnect();
+      socket.off("receive_message");
     };
-  }, [navigate]);
+  },[socket])
+
 
   // ✅ Auto scroll
   useEffect(() => {
@@ -116,6 +73,11 @@ export default function Chat() {
                   : "other-message"
               }`}
             >
+
+            {/* show name only for other user */}
+              {msg.sender !== user.username && (
+                <p className="sender-name">{msg.sender}</p>
+              )}
               <p>{msg.text}</p>
               <span className="time">{msg.time}</span>
             </div>
@@ -123,14 +85,20 @@ export default function Chat() {
           <div ref={chatEndRef}></div>
         </div>
 
-        <div className="input-box">
-          <input
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type a message..."
-          />
-          <button onClick={sendMessage}>➤</button>
-        </div>
+        <form 
+          className="input-box"
+          onSubmit={(e) => {
+            e.preventDefault();
+            sendMessage();
+          }}
+        >
+            <input
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Type a message..."
+            />
+            <button type="submit" disabled={!message.trim()}>➤</button>
+        </form>
       </div>
     </div>
   );
