@@ -7,7 +7,6 @@ const API_URL = import.meta.env.VITE_API_URL;
 export default function useSocket() {
     const [socket, setSocket] = useState(null);
     const [user, setUser] = useState(null);
-    const [chat, setChat] = useState([]);
     const navigate = useNavigate();
 
 

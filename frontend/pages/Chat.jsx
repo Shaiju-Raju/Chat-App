@@ -16,6 +16,8 @@ export default function Chat() {
   useEffect (() => {
     if(!socket) return;
 
+    socket.emit("join_room", "room1");
+
     socket.on("receive_message", (data) => {
       setChat((prev) => [...prev, data]);
     });
@@ -41,7 +43,10 @@ export default function Chat() {
       time: new Date().toLocaleTimeString(),
     };
 
-    socket.emit("send_message", msgData);
+    socket.emit("send_message", {
+      room: "room1",
+      ...msgData
+    });
     setMessage("");
   };
 

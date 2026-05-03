@@ -19,19 +19,14 @@ const io = new Server(server, {
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
 
-  console.log("Token from Client:", token);
-
-  if (!token) {
-    console.log("no Tocken")
+  if (!token) {    
     return next(new Error("No Token"));
-
   }
 
   try {
     const decode = jwt.verify(token, process.env.JWT_SECRET)
     socket.user = decode;
-    console.log("Decode User", decode);
-
+  
     next ();
   } catch (err) {
     if(err.name === "TokenExpiredError") {
@@ -45,15 +40,18 @@ io.use((socket, next) => {
 //Real time chating after verificatioin
 io.on("connection", (socket) => {
   socket.emit("user_data", socket.user);
-  console.log("🟢 User connected:", socket.id);
 
-  socket.on("send_message", (data)=> {
-    console.log("📩 Message:", data);
-    io.emit("receive_message", data);
-  })
+  socket.on("join_room", (room) => {
+    socket.join(room);
+    console.log(`User ${socket.id} joined ${room}`);
+  });
+
+  socket.on("send_message", (data) => {
+    const { room, ...message } = data;
+    io.to(room).emit("receive_message", message);
+  });
 
   socket.on("disconnect", () => {
-    console.log("🔴 User disconnected:", socket.id);
   });
 });
 
