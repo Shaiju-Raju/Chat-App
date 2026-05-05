@@ -46,10 +46,16 @@ io.on("connection", (socket) => {
     console.log(`User ${socket.id} joined ${room}`);
   });
 
+  socket.on("leave_room", (room) => {
+    socket.leave(room);
+  });
+
   socket.on("send_message", (data) => {
     const { room, ...message } = data;
     io.to(room).emit("receive_message", message);
   });
+  
+
 
   socket.on("disconnect", () => {
   });

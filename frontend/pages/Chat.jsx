@@ -12,11 +12,32 @@ export default function Chat() {
   const chatEndRef = useRef(null);
   const navigate = useNavigate();
   const {socket, user} = useSocket()
+  const [currentRoom, setCurrentRoom] = useState("room1");
+  const rooms = [
+    { id: "room1", name: "General Chat" },
+    { id: "room2", name: "Developers" },
+    { id: "room3", name: "Friends" },
+  ];
+
+
+  const handleRoomClick = (roomId) => {
+    if (!socket) return;
+
+    // leave old room
+    socket.emit("leave_room", currentRoom);
+
+    // join new room
+    socket.emit("join_room", roomId);
+
+    setCurrentRoom(roomId);
+    setChat([]); // clear old messages
+  };
+
 
   useEffect (() => {
     if(!socket) return;
 
-    socket.emit("join_room", "room1");
+    socket.emit("join_room", currentRoom);
 
     socket.on("receive_message", (data) => {
       setChat((prev) => [...prev, data]);
@@ -44,7 +65,7 @@ export default function Chat() {
     };
 
     socket.emit("send_message", {
-      room: "room1",
+      room:currentRoom,
       ...msgData
     });
     setMessage("");
@@ -59,6 +80,20 @@ export default function Chat() {
       {/* SIDEBAR */}
       <div className="sidebar">
         <h2 className="logo">ChatApp</h2>
+        <div className="user-list">
+          {rooms.map((room) => (
+            <div
+              key={room.id}
+              className="user-item"
+              onClick={() => handleRoomClick(room.id)}
+            >
+              <div className="avatar"></div>
+              <div>
+                <div className="name">{room.name}</div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* CHAT AREA */}
