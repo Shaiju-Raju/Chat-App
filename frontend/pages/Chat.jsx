@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import "../pages/chat.css";
 import useSocket from "../hooks/useSocket.js";
 
-const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Chat() {
   const [message, setMessage] = useState("");
@@ -43,8 +42,13 @@ export default function Chat() {
       setChat((prev) => [...prev, data]);
     });
 
+    socket.on("old messages", (messages) => {
+      setChat(messages);
+    })
+
     return () => {
       socket.off("receive_message");
+      socket.off("old messages");
     };
   },[socket])
 

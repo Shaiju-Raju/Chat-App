@@ -7,6 +7,7 @@ import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 
 const server = createServer(app);
+const roomMessages = {};
 
 const io = new Server(server, {
   cors: {
@@ -26,6 +27,7 @@ io.use((socket, next) => {
   try {
     const decode = jwt.verify(token, process.env.JWT_SECRET)
     socket.user = decode;
+    
   
     next ();
   } catch (err) {
@@ -43,7 +45,10 @@ io.on("connection", (socket) => {
 
   socket.on("join_room", (room) => {
     socket.join(room);
-    console.log(`User ${socket.id} joined ${room}`);
+    
+    const message = roomMessages[room] || [];
+    socket.emit("old messages", message);
+
   });
 
   socket.on("leave_room", (room) => {
@@ -52,6 +57,13 @@ io.on("connection", (socket) => {
 
   socket.on("send_message", (data) => {
     const { room, ...message } = data;
+
+    if(!roomMessages[room]) {
+      roomMessages[room] = [];
+    }
+
+    roomMessages[room].push(message);
+
     io.to(room).emit("receive_message", message);
   });
   
