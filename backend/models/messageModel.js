@@ -11,3 +11,12 @@ export const saveMessage = async (room ,sender,text,time) => {
     return result.rows[0];
 
 }
+
+
+export const getRoomMessage = async (room) => {
+    const result = await pool.query(
+        "SELECT * FROM messages WHERE room = $1",
+        [room]
+    );
+    return result.rows[0];
+}

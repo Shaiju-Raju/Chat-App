@@ -5,6 +5,7 @@ import app from "./app.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
+import { saveMessage } from "./models/messageModel.js";
 
 const server = createServer(app);
 const roomMessages = {};
@@ -55,14 +56,10 @@ io.on("connection", (socket) => {
     socket.leave(room);
   });
 
-  socket.on("send_message", (data) => {
+  socket.on("send_message", async(data) => {
     const { room, ...message } = data;
 
-    if(!roomMessages[room]) {
-      roomMessages[room] = [];
-    }
-
-    roomMessages[room].push(message);
+    await saveMessage(room, message.sender, message.text, message.time);
 
     io.to(room).emit("receive_message", message);
   });
