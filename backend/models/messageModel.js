@@ -18,5 +18,5 @@ export const getRoomMessage = async (room) => {
         "SELECT * FROM messages WHERE room = $1",
         [room]
     );
-    return result.rows[0];
+    return result.rows;
 }
