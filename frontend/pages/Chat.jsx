@@ -57,6 +57,12 @@ export default function Chat() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat]);
+  
+  // ✅ Finding Current Room Name
+  const selectedRoom = rooms.find(
+    (room) => room.id === currentRoom
+  );
+
 
   // ✅ Send message
   const sendMessage = () => {
@@ -88,7 +94,9 @@ export default function Chat() {
           {rooms.map((room) => (
             <div
               key={room.id}
-              className="user-item"
+              className={`user-item ${
+                currentRoom === room.id ? "active-room" : ""
+              }`}
               onClick={() => handleRoomClick(room.id)}
             >
               <div className="avatar"></div>
@@ -104,7 +112,7 @@ export default function Chat() {
       <div className="chat-area">
         <div className="chat-header">
           <div className="avatar"></div>
-          <h3>{user.username}</h3>
+          <h3>{selectedRoom?.name}</h3>
         </div>
 
         <div className="chat-box">

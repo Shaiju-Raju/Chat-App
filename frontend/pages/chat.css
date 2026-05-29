@@ -160,3 +160,8 @@
   display: block;
   text-align: right;
 }
+
+.active-room {
+  background-color: #2d3748;
+  border-radius: 10px;
+}
